@@ -1,14 +1,16 @@
 import customtkinter
 import requests
 import re
+import json
 from googletrans import Translator
 
 
 class SimpleTranslatorApp:
     def __init__(self, root):
         self.root = root
-        self.google_translator = GoogleLocalTranslator()
-        self.api_translator = APITranslator(api_key="a08c3e4a-d320-4714-a10f-4bfceffb9233:fx")
+        self.google_translator = FallbackTranslator()
+        config = SimpleTranslatorApp.load_config()
+        self.api_translator = MainTranslator(api_key=config["deepl_api_key"])
 
         # GUI-Einstellungen
         customtkinter.set_appearance_mode("dark")
@@ -24,6 +26,13 @@ class SimpleTranslatorApp:
         self.root.grid_columnconfigure(1, weight=1)
         self.root.grid_columnconfigure(2, weight=1)
 
+        self.label_header = None
+        self.label_left = None
+        self.label_right = None
+        self.entry_left = None
+        self.entry_right = None
+        self.switch_button = None
+        self.translate_button = None
         # UI-Elemente
         self.create_widgets()
 
@@ -31,7 +40,7 @@ class SimpleTranslatorApp:
         # Überschrift
         self.label_header = customtkinter.CTkLabel(
             self.root,
-            text="Simple Translator",
+            text="Simple Translator ",
             font=("Monotype Corsiva", 40, "bold"),
             text_color="#FF5733"
         )
@@ -46,7 +55,7 @@ class SimpleTranslatorApp:
 
         # Eingabefelder
         self.entry_left = customtkinter.CTkEntry(self.root, width=200, justify="center", validate="key",
-                                                 validatecommand=(self.root.register(self.validate_input), "%P"))
+                                                 validatecommand=(self.root.register(SimpleTranslatorApp.validate_input), "%P"))
         self.entry_left.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
 
         self.entry_right = customtkinter.CTkEntry(self.root, width=200, justify="center")
@@ -60,7 +69,19 @@ class SimpleTranslatorApp:
                                                         width=160, height=40)
         self.translate_button.grid(row=3, column=1, padx=20, pady=10)
 
-    def validate_input(self, value):
+    @staticmethod
+    def load_config(file_path="config.json"):
+        """Lädt eine JSON-Konfigurationsdatei."""
+        try:
+            with open(file_path, "r") as config_file:
+                return json.load(config_file)
+        except FileNotFoundError:
+            raise Exception(f"Die Konfigurationsdatei '{file_path}' wurde nicht gefunden.")
+        except json.JSONDecodeError:
+            raise Exception(f"Fehler beim Lesen der Konfigurationsdatei '{file_path}'. Überprüfe das JSON-Format.")
+
+    @staticmethod
+    def validate_input(value):
         # Regulärer Ausdruck für erlaubte Zeichen: nur Buchstaben (einschließlich deutscher Umlaute) und Leerzeichen
         pattern = "^[a-zA-ZäöüÄÖÜß]*$"
         if re.match(pattern, value):
@@ -84,7 +105,7 @@ class SimpleTranslatorApp:
 
         # Versuche die Übersetzung mit der API
         try:
-            translated_text = self.api_translator.translate(left_input, source_lang, target_lang)
+            translated_text = self.api_translator.translate(left_input.lower(), source_lang, target_lang)
             if translated_text:
                 print("Using API Translator")
             else:
@@ -102,10 +123,10 @@ class SimpleTranslatorApp:
         # Übersetzte Ausgabe anzeigen
 
         self.entry_right.delete(0, "end")
-        self.entry_right.insert(0, translated_text.lower())
+        self.entry_right.insert(0, translated_text)
 
 
-class APITranslator:
+class MainTranslator:
     def __init__(self, api_key, api_url="https://api-free.deepl.com/v2/translate"):
         """
         Initialisiert die API-Verbindung mit dem angegebenen API-Schlüssel und der API-URL.
@@ -143,7 +164,7 @@ class APITranslator:
             raise Exception("Unerwartetes API-Antwortformat erhalten.")
 
 
-class GoogleLocalTranslator:
+class FallbackTranslator:
     def __init__(self):
         self.translator = Translator()
 
