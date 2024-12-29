@@ -177,6 +177,7 @@ class FallbackTranslator:
             return None
 
 
+
 if __name__ == "__main__":
     root = customtkinter.CTk()
     app = SimpleTranslatorApp(root)
