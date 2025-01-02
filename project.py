@@ -8,15 +8,34 @@ from googletrans import Translator
 class SimpleTranslatorApp:
     def __init__(self, root):
         self.root = root
+        # translater
         self.google_translator = FallbackTranslator()
+        #load deepl config
         config = SimpleTranslatorApp.load_config()
         self.deepl_translator = MainTranslator(api_key=config["deepl_api_key"])
 
+        # gui settings
+        self.gui_settings()
+
+        # UI-Elemente
+        self.label_header = None
+        self.label_left = None
+        self.label_right = None
+        self.entry_left = None
+        self.entry_right = None
+        self.switch_button = None
+        self.translate_button = None
+        self.status_label = None
+
+        self.create_widgets()
+
+    def gui_settings(self):
         # GUI-Einstellungen
         customtkinter.set_appearance_mode("dark")
         self.root.title("Simple Translator")
         window_width = 600
         window_height = 300
+
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
         x_coordinate = int((screen_width / 2) - (window_width / 2))
@@ -28,17 +47,6 @@ class SimpleTranslatorApp:
         self.root.grid_columnconfigure(0, weight=1)
         self.root.grid_columnconfigure(1, weight=1)
         self.root.grid_columnconfigure(2, weight=1)
-
-        self.label_header = None
-        self.label_left = None
-        self.label_right = None
-        self.entry_left = None
-        self.entry_right = None
-        self.switch_button = None
-        self.translate_button = None
-        self.status_label = None
-        # UI-Elemente
-        self.create_widgets()
 
     def create_widgets(self):
         # Überschrift
@@ -59,11 +67,13 @@ class SimpleTranslatorApp:
 
         # Eingabefelder
         self.entry_left = customtkinter.CTkEntry(self.root, width=200, justify="center", validate="key",
-                                                 validatecommand=(self.root.register(SimpleTranslatorApp.validate_input), "%P"))
+                                                 validatecommand=(
+                                                     self.root.register(SimpleTranslatorApp.validate_input), "%P"))
         self.entry_left.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
 
         self.entry_right = customtkinter.CTkEntry(self.root, width=200, justify="center")
         self.entry_right.grid(row=2, column=2, padx=20, pady=10, sticky="ew")
+        self.entry_right.bind("<Key>", lambda e: None if (e.keysym == "c" and (e.state & 0x4)) else "break")
 
         # Buttons
         self.switch_button = customtkinter.CTkButton(self.root, text="Switch", command=self.switch_languages, width=80)
@@ -80,9 +90,9 @@ class SimpleTranslatorApp:
             font=("Arial", 12),
             text_color="green",
             fg_color="#333333",  # Dunkelgrauer Hintergrund für die Leiste
-            height=25
+            height=23
         )
-        self.status_label.grid(row=5, column=0, columnspan=3, sticky="ew")
+        self.status_label.grid(row=5, column=0, columnspan=3, sticky="nsew")
 
     @staticmethod
     def load_config(file_path="config.json"):
@@ -123,12 +133,14 @@ class SimpleTranslatorApp:
         left_input = self.entry_left.get().strip()
         source_lang = "en" if self.label_left.cget("text") == "English" else "de"
         target_lang = "de" if source_lang == "en" else "en"
-
+        if not left_input:
+            self.status_label.configure(text="No input given.", text_color="red")
+            return
         # Versuche die Übersetzung mit der API
         try:
             translated_text = self.deepl_translator.translate(left_input.lower(), source_lang, target_lang)
             if translated_text.lower() == left_input.lower():
-                if not self.is_translated(self.deepl_translator, left_input, translated_text, source_lang, target_lang):
+                if not self.is_translated(self.deepl_translator, left_input.lower(), translated_text.lower(), source_lang, target_lang):
                     print("No translation found")
                     translated_text = None
                     self.status_label.configure(text="No translation available for the given input.", text_color="red")
@@ -143,7 +155,8 @@ class SimpleTranslatorApp:
             #print(f"API failed: {e}")
             translated_text = self.google_translator.translate(left_input, source_lang, target_lang)
             if translated_text.lower() == left_input.lower():
-                if not self.is_translated(self.google_translator, left_input, translated_text, source_lang, target_lang):
+                if not self.is_translated(self.google_translator, left_input, translated_text, source_lang,
+                                          target_lang):
                     print("No translation found")
                     translated_text = None
                     self.status_label.configure(text="No translation available for the given input.", text_color="red")
@@ -170,7 +183,7 @@ class SimpleTranslatorApp:
 
 
 class MainTranslator:
-    def __init__(self, api_key, api_url="https://api-free.deepl.com/v2/translate"):
+    def __init__(self, api_key, api_url="https://api-free.deepl.com/v2/translate1"):
         """
         Initialisiert die API-Verbindung mit dem angegebenen API-Schlüssel und der API-URL.
 
@@ -200,11 +213,21 @@ class MainTranslator:
             response = requests.post(self.api_url, data=params)
             response.raise_for_status()  # Hebt HTTP-Fehler hervor (z. B. 401 oder 403)
             result = response.json()
-            return result["translations"][0]["text"]
-        except requests.exceptions.RequestException as e:
-            raise Exception(f"Fehler bei der API-Anfrage: {e}")
-        except KeyError:
-            raise Exception("Unerwartetes API-Antwortformat erhalten.")
+
+            # Überprüfen, ob die Antwort das erwartete Format hat
+            if "translations" in result and len(result["translations"]) > 0:
+                return result["translations"][0]["text"]
+            else:
+                raise KeyError("DeepL API returned an unexpected format.")
+
+        except requests.exceptions.HTTPError as e:
+            raise Exception(f"HTTP Error: {e}")
+        except requests.exceptions.ConnectionError:
+            raise Exception("Connection error: Unable to reach DeepL API.")
+        except KeyError as e:
+            raise Exception(f"Unexpected API response structure: {e}")
+        except Exception as e:
+            raise Exception(f"An unknown error occurred: {e}")
 
 
 class FallbackTranslator:
@@ -216,7 +239,7 @@ class FallbackTranslator:
             result = self.translator.translate(text, src=source_lang, dest=target_lang)
             return result.text
         except Exception as e:
-            print(f"Google Local Translator Error: {e}")
+            print(f"Google Translator Error: {e}")
             return None
 
 
