@@ -10,7 +10,7 @@ class SimpleTranslatorApp:
         self.root = root
         self.google_translator = FallbackTranslator()
         config = SimpleTranslatorApp.load_config()
-        self.api_translator = MainTranslator(api_key=config["deepl_api_key"])
+        self.deepl_translator = MainTranslator(api_key=config["deepl_api_key"])
 
         # GUI-Einstellungen
         customtkinter.set_appearance_mode("dark")
@@ -22,6 +22,9 @@ class SimpleTranslatorApp:
         x_coordinate = int((screen_width / 2) - (window_width / 2))
         y_coordinate = int((screen_height / 2) - window_height)
         self.root.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")
+
+        self.root.grid_rowconfigure(4, weight=1)  # Leerzeile vor der Statusleiste
+        self.root.grid_rowconfigure(5, weight=0)  # Statusleiste (fixierte Höhe)
         self.root.grid_columnconfigure(0, weight=1)
         self.root.grid_columnconfigure(1, weight=1)
         self.root.grid_columnconfigure(2, weight=1)
@@ -33,6 +36,7 @@ class SimpleTranslatorApp:
         self.entry_right = None
         self.switch_button = None
         self.translate_button = None
+        self.status_label = None
         # UI-Elemente
         self.create_widgets()
 
@@ -69,6 +73,17 @@ class SimpleTranslatorApp:
                                                         width=160, height=40)
         self.translate_button.grid(row=3, column=1, padx=20, pady=10)
 
+        # Statusleiste
+        self.status_label = customtkinter.CTkLabel(
+            self.root,
+            text="Ready",
+            font=("Arial", 12),
+            text_color="green",
+            fg_color="#333333",  # Dunkelgrauer Hintergrund für die Leiste
+            height=25
+        )
+        self.status_label.grid(row=5, column=0, columnspan=3, sticky="ew")
+
     @staticmethod
     def load_config(file_path="config.json"):
         """Lädt eine JSON-Konfigurationsdatei."""
@@ -98,6 +113,12 @@ class SimpleTranslatorApp:
         # Leere das rechte Eingabefeld (entry_right)
         self.entry_right.delete(0, "end")
 
+    def is_translated(self, translator, left_input, translated_text, source_lang, target_lang):
+        is_translated = translator.translate(left_input.lower(), target_lang, source_lang)
+        if is_translated.lower() != translated_text.lower():
+            return False
+        return True
+
     def translate_text(self):
         left_input = self.entry_left.get().strip()
         source_lang = "en" if self.label_left.cget("text") == "English" else "de"
@@ -105,15 +126,37 @@ class SimpleTranslatorApp:
 
         # Versuche die Übersetzung mit der API
         try:
-            translated_text = self.api_translator.translate(left_input.lower(), source_lang, target_lang)
+            translated_text = self.deepl_translator.translate(left_input.lower(), source_lang, target_lang)
+            if translated_text.lower() == left_input.lower():
+                if not self.is_translated(self.deepl_translator, left_input, translated_text, source_lang, target_lang):
+                    print("No translation found")
+                    translated_text = None
+                    self.status_label.configure(text="No translation available for the given input.", text_color="red")
+                    return
+
             if translated_text:
                 print("Using API Translator")
+                self.status_label.configure(text="Translated with DeepL", text_color="green")
             else:
                 raise Exception("API returned no result")
         except Exception as e:
-            print(f"API failed: {e}")
+            #print(f"API failed: {e}")
             translated_text = self.google_translator.translate(left_input, source_lang, target_lang)
-            print("Using Google Translate as fallback")
+            if translated_text.lower() == left_input.lower():
+                if not self.is_translated(self.google_translator, left_input, translated_text, source_lang, target_lang):
+                    print("No translation found")
+                    translated_text = None
+                    self.status_label.configure(text="No translation available for the given input.", text_color="red")
+                    return
+            if translated_text:
+                print("Using Google Translate as fallback")
+                self.status_label.configure(text="Translated with Google", text_color="green")
+            else:
+                print("Translation failed completely.")
+                self.entry_right.delete(0, "end")
+                self.entry_right.insert(0, "Error: Translation failed.")
+                self.status_label.configure(text="Translation failed completely", text_color="red")
+                return
 
         # Wenn keine Übersetzung gefunden wurde, rechte Eingabe leeren
         if not translated_text:
@@ -175,7 +218,6 @@ class FallbackTranslator:
         except Exception as e:
             print(f"Google Local Translator Error: {e}")
             return None
-
 
 
 if __name__ == "__main__":
