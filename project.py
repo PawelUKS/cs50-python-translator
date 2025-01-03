@@ -3,6 +3,7 @@ import requests
 import re
 import json
 from googletrans import Translator
+from spellchecker import SpellChecker
 
 
 class SimpleTranslatorApp:
@@ -123,11 +124,14 @@ class SimpleTranslatorApp:
         # Leere das rechte Eingabefeld (entry_right)
         self.entry_right.delete(0, "end")
 
-    def is_translated(self, translator, left_input, translated_text, source_lang, target_lang):
-        is_translated = translator.translate(left_input.lower(), target_lang, source_lang)
-        if is_translated.lower() != translated_text.lower():
+
+
+    def is_in_dict(self, text, language):
+        check = SpellChecker(language=language)
+        if text in check:
+            return True
+        else:
             return False
-        return True
 
     def translate_text(self):
         left_input = self.entry_left.get().strip()
@@ -135,16 +139,16 @@ class SimpleTranslatorApp:
         target_lang = "de" if source_lang == "en" else "en"
         if not left_input:
             self.status_label.configure(text="No input given.", text_color="red")
+            self.entry_right.delete(0, "end")
+            return
+
+        if not self.is_in_dict(left_input, source_lang):
+            self.status_label.configure(text="No translation available for the given input.", text_color="red")
+            self.entry_right.delete(0, "end")
             return
         # Versuche die Übersetzung mit der API
         try:
             translated_text = self.deepl_translator.translate(left_input.lower(), source_lang, target_lang)
-            if translated_text.lower() == left_input.lower():
-                if not self.is_translated(self.deepl_translator, left_input.lower(), translated_text.lower(), source_lang, target_lang):
-                    print("No translation found")
-                    translated_text = None
-                    self.status_label.configure(text="No translation available for the given input.", text_color="red")
-                    return
 
             if translated_text:
                 print("Using API Translator")
@@ -154,13 +158,6 @@ class SimpleTranslatorApp:
         except Exception as e:
             #print(f"API failed: {e}")
             translated_text = self.google_translator.translate(left_input, source_lang, target_lang)
-            if translated_text.lower() == left_input.lower():
-                if not self.is_translated(self.google_translator, left_input, translated_text, source_lang,
-                                          target_lang):
-                    print("No translation found")
-                    translated_text = None
-                    self.status_label.configure(text="No translation available for the given input.", text_color="red")
-                    return
             if translated_text:
                 print("Using Google Translate as fallback")
                 self.status_label.configure(text="Translated with Google", text_color="green")
@@ -170,12 +167,6 @@ class SimpleTranslatorApp:
                 self.entry_right.insert(0, "Error: Translation failed.")
                 self.status_label.configure(text="Translation failed completely", text_color="red")
                 return
-
-        # Wenn keine Übersetzung gefunden wurde, rechte Eingabe leeren
-        if not translated_text:
-            self.entry_right.delete(0, "end")
-            return
-
         # Übersetzte Ausgabe anzeigen
 
         self.entry_right.delete(0, "end")
@@ -183,7 +174,7 @@ class SimpleTranslatorApp:
 
 
 class MainTranslator:
-    def __init__(self, api_key, api_url="https://api-free.deepl.com/v2/translate1"):
+    def __init__(self, api_key, api_url="https://api-free.deepl.com/v2/translate"):
         """
         Initialisiert die API-Verbindung mit dem angegebenen API-Schlüssel und der API-URL.
 
