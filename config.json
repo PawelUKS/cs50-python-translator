@@ -1,3 +1,7 @@
 {
-    "deepl_api_key": "a08c3e4a-d320-4714-a10f-4bfceffb9233:fx"
+    "DeepL": {
+        "api_key": "a08c3e4a-d320-4714-a10f-4bfceffb9233:fx",
+        "api_url": "https://api-free.deepl.com/v2/translate"
+    }
+
 }
