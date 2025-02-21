@@ -150,13 +150,37 @@ class TranslatorModel:
 
     def is_in_dict(self, text, language):
         return text in SpellChecker(language=language)
-
-    def fuzzy_search(self, word, language, n=3):
+    """
+    def fuzzy_search(self, word, language, n=8):
         spell = SpellChecker(language=language)
         word_list = list(spell.word_frequency.dictionary.keys())
         if not word_list:
             return [word]
         return sorted(word_list, key=lambda w: textdistance.damerau_levenshtein(word.lower(), w.lower()))[:n]
+    """
+
+    def fuzzy_search(self, word, language, n=8, max_distance=1):
+        spell = SpellChecker(language=language)
+        word_list = list(spell.word_frequency.dictionary.keys())
+
+        if not word_list:  # Falls keine Wörter vorhanden sind
+            return [word]
+
+        # Berechne den Ähnlichkeitswert für jedes Wort
+        similar_words = sorted(
+            word_list,
+            key=lambda w: textdistance.damerau_levenshtein(word.lower(), w.lower())
+        )
+
+        # Filtere Wörter, die einen Abstand von `max_distance` haben und mit dem gleichen Buchstaben starten
+        filtered_words = [
+            w for w in similar_words
+            if textdistance.damerau_levenshtein(word.lower(), w.lower()) <= max_distance
+               and w.lower().startswith(word.lower()[0])  # 👈 Gleicher erster Buchstabe
+        ]
+
+        # Gebe maximal `n` Wörter zurück, aber keine zufälligen Wörter
+        return filtered_words[:min(n, len(filtered_words))]
 
 
 # === View ===
