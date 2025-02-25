@@ -1,4 +1,5 @@
-# **Simple Translator - Documentation**
+# **Simple Translator - CS50 Final Project Documentation**
+
 
 ## Screenshots
 
@@ -122,13 +123,24 @@ Das Projekt ist **modular und erweiterbar**, sodass weitere Übersetzungs-APIs l
 
 ## **2. Hauptfunktionen**
 ### **Fallback-Mechanismus**
-Falls eine Übersetzungs-API ausfällt (z. B. **DeepL**), wird automatisch auf eine andere API (z. B. **Google Translate**) umgeschaltet. Dies garantiert eine **nahtlose Benutzererfahrung**.
+Eine der wichtigsten Funktionen des Simple Translators ist sein **Fallback-Mechanismus**. Falls ein Übersetzungsdienst (z. B. DeepL) aufgrund eines API-Ausfalls oder falscher Zugangsdaten nicht verfügbar ist, wechselt das System automatisch zu einem alternativen Dienst (Google Translate). Dies gewährleistet eine durchgehende Funktionalität und verhindert Übersetzungsfehler.
 
-### **Unscharfe Suche (Fuzzy Search)**
-Durch den **Damerau-Levenshtein-Algorithmus** werden Tippfehler erkannt und **alternative Schreibweisen vorgeschlagen**.
+Der Fallback-Mechanismus basiert auf dem **Strategy Pattern**, das die dynamische Auswahl eines geeigneten Übersetzungsdienstes zur Laufzeit ermöglicht.
+### **Unscharfe Suche (Tippfehlerkorrektur)**
+Die Anwendung nutzt einen **Fuzzy-Search-Algorithmus (unscharfe Suche)**, um die korrekte Schreibweise von Wörtern zu finden – besonders hilfreich bei Tippfehlern oder unbekannten Wörtern.
+
+- **Damerau-Levenshtein-Algorithmus** bestimmt die Ähnlichkeit zwischen Wörtern.
+- Bietet **Echtzeit-Vorschläge** für falsch geschriebene Wörter.  
+- Stellt sicher, dass Nutzer selbst bei Tippfehlern **korrekte Übersetzungen** erhalten.
 
 ### **Strategy Pattern (Übersetzungs-APIs)**
-Durch das **Strategy Pattern** kann das System flexibel zwischen verschiedenen Übersetzungsdiensten wechseln und neue Dienste hinzufügen, ohne den Hauptcode zu ändern.
+Das Projekt nutzt das **Strategy Pattern**, um mehrere Übersetzungsdienste effizient zu verwalten:
+
+- Definiert eine **gemeinsame Schnittstelle** (`TranslatorStrategy`) für alle Übersetzungsdienste.
+- Implementiert mehrere Strategien (`DeepLTranslator`, `GoogleTranslator`).
+- Nutzt eine **Fallback-Strategie** (`FallbackTranslator`), um Dienste dynamisch zu wechseln.
+
+Diese Architektur ermöglicht die einfache Integration neuer Übersetzungsdienste, **ohne die Kernlogik zu ändern**.
 
 ---
 
