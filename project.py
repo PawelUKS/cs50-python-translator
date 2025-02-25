@@ -10,7 +10,7 @@ import inspect
 import sys
 
 #######################################################################################################################
-# util.py -> For Helper Classes and Methods ###########################################################################
+# utils.py -> For Helper Classes and Methods ###########################################################################
 #######################################################################################################################
 
 
@@ -99,6 +99,7 @@ class TranslatorStrategy(ABC):
 class DeepLTranslator(TranslatorStrategy):
 
     # DeepLTranslator Class That Connects To The DeepL API For Translations
+
     def __init__(self):
         try:
             config = Utils.load_config("DeepLTranslator")
@@ -143,6 +144,7 @@ class DeepLTranslator(TranslatorStrategy):
 class GoogleTranslator(TranslatorStrategy):
 
     # GoogleTranslator Module That Uses The Google Translate API
+
     def __init__(self):
         self.translator = Translator()
 
@@ -187,6 +189,7 @@ class FallbackTranslator(TranslatorStrategy):
 
     def translate(self, text, source_lang, target_lang):
         for translator in self.translators:
+
             # Store The Translator's Class Name In `name`
             name = type(translator).__name__
             try:
@@ -209,7 +212,6 @@ class TranslatorModel:
     # It Also Provides Spelling Checking And Fuzzy Search For Similar Words
 
     def __init__(self):
-
         # List Of Available Translators
         available_translators = Utils.load_translators()
         if not available_translators:

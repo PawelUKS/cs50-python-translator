@@ -1,0 +1,6 @@
+customtkinter
+googletrans
+requests
+spellchecker
+textdistance
+pytest
