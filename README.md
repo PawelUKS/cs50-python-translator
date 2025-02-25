@@ -73,7 +73,7 @@ This design ensures that new translation services can be added in the future **w
 pip install -r requirements.txt
 ```
 
-### **▶ Run the Translator**
+### **Run the Translator**
 ```bash
 python project.py
 ```
@@ -138,7 +138,7 @@ Durch das **Strategy Pattern** kann das System flexibel zwischen verschiedenen �
 pip install -r requirements.txt
 ```
 
-### **▶ Programm starten**
+### **Programm starten**
 ```bash
 python project.py
 ```
