@@ -1,0 +1,10 @@
+{
+    "DeepLTranslator": {
+        "api_key": "test_key",
+        "api_url": "https://api-free.deepl.com/v2/translate",
+        "enabled": true
+    },
+    "GoogleTranslator": {
+        "enabled": true
+    }
+}
