@@ -157,21 +157,21 @@ class GoogleTranslator(TranslatorStrategy):
             result = self.translator.translate(text, src=source_lang, dest=target_lang)
 
             if not hasattr(result, "text"):
-                raise AttributeError("Objekt Is Empty Or Invalid")
+                raise AttributeError("Object Is Empty Or Invalid")
 
-            return result.text, "Google Translate"
+            return result.text, "GoogleTranslator"
 
         except AttributeError as e:
-            print(f"[Google Translate Error] {e}")
-            return None, "Google Translate"
+            print(f"[GoogleTranslator Error] {e}")
+            return None, "GoogleTranslator"
 
         except requests.exceptions.RequestException as e:
-            print(f"[Google Translate API-Error] {e}")
-            return None, "Google Translate"
+            print(f"[GoogleTranslator API-Error] {e}")
+            return None, "GoogleTranslator"
 
         except Exception as e:
-            print(f"[Google Translate Unknown Error] {e}")
-            return None, "Google Translate"
+            print(f"[GoogleTranslator Unknown Error] {e}")
+            return None, "GoogleTranslator"
 
 
 class FallbackTranslator(TranslatorStrategy):
