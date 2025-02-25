@@ -106,7 +106,7 @@ For any questions, issues, or suggestions, feel free to contact me or open an is
 
 ---
 
-# **🇩🇪 Deutsche Version**
+# **Deutsche Version**
 
 ## **1. Überblick**
 Der **Simple Translator** ist ein leistungsstarkes Übersetzungstool, das für das **CS50 Abschlussprojekt** entwickelt wurde. Es nutzt moderne Software-Design-Patterns und erfüllt die CS50-Anforderungen durch:
